@@ -11,4 +11,10 @@ The following assumptions were made and were accounted for in the function discu
   - A try and except block is used to convert the dataframe back to a JSON format using the DataFrame.to_json function 
 
 2. If a user inputs the month portion of the date as a three letter abbreviation instead of the full complete spelling, the majority of the data will be left out. 
-  - the statements including the 3 letter abbreviations are then included to account for this assumption. 
+  - The statements including the 3 letter abbreviations are then included to account for this assumption. 
+
+3. Money formats such as M$##, etc aren't account for with the preivous forms. This would result in data being missed in our analysis. 
+  - In order to account for this, additional forms must be made and the related changes made to the code in the other areas.
+
+4. The kaggle datatype transfer section of the function is susceptible to obtaining an error if there are any NaN values. This would result in a halt of the function until those values are fixed. 
+  - To fix this, a try and except block is created which will convert the NaN values to zero if there is any error when initially computing the datatype conversions. 

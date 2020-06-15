@@ -120,7 +120,19 @@ def filtering_funct(wiki_data, kaggle_metadata, rating_data):
         
             # return value
             return value  
-        
+        # Adding revised statements for assumption 3
+        if re.match(r'B\$\s?\d*\s?.*\s?\d*', s, flags= re.IGNORECASE):
+            s = re.sub(r'\$|\s|[a-zA-Z]', '', s)
+
+            value = float(s) * 10**9
+
+            return value
+        if re.match(r'M\$\s?\d*\s?.*\s?\d*', s, flags= re.IGNORECASE):
+            s = re.sub(r'\$|\s|[a-zA-Z]', '', s)
+
+            value = float(s) * 10**6  
+
+            return value 
         elif re.match(r'\$\s\d{1,3}(?:[,\.]\d{3})+(?!\s[mb]illi?on)', s, flags = re.IGNORECASE):
             # remove dollar sign and commas 
             s = re.sub(r'\$|,', '', s)
@@ -142,15 +154,17 @@ def filtering_funct(wiki_data, kaggle_metadata, rating_data):
     box_office = box_office.apply(lambda x: ' '.join(x) if type(x) == list else x)
 
     # Create regex forms for financial searches 
+    # Assumption 3: People Using M$### or B$### instead of writing million or billion
     form_one = r'\$\s*\d+\.?\d*\s*[mb]illi?on'
     form_two = r'\$\s*\d{1,3}(?:[,\.]\d{3})+(?!\s[mb]illi?on)'
+    form_three = r'[MB]\$\s?\d*\s?.*\s?\d*'
     
     # Remove ranged values
     box_office = box_office.str.replace(r'\$.*[-—–](?![a-z])', '$', regex= True)
 
     # Utilize the parse_dollars function to revise the box_office values 
     # Drop 'Box office' column
-    wiki_df['box_office'] = box_office.str.extract(f'({form_one}|{form_two})', flags=re.IGNORECASE)[0].apply(parse_dollars)
+    wiki_df['box_office'] = box_office.str.extract(f'({form_one}|{form_two}|{form_three})', flags=re.IGNORECASE)[0].apply(parse_dollars)
     wiki_df.drop('Box office', axis=1, inplace=True)
     
     ## Budget Data Cleaning 
@@ -161,7 +175,7 @@ def filtering_funct(wiki_data, kaggle_metadata, rating_data):
     budget = budget.str.replace(r'\[\d+\]\s*','')
 
     # modify wiki_df for new values and drop old column
-    wiki_df['budget'] = budget.str.extract(f'({form_one}|{form_two})', flags=re.IGNORECASE)[0].apply(parse_dollars)
+    wiki_df['budget'] = budget.str.extract(f'({form_one}|{form_two}|{form_three})', flags=re.IGNORECASE)[0].apply(parse_dollars)
     wiki_df.drop('Budget', axis = 1, inplace = True)
 
     ## Release Date Cleaning 
@@ -201,12 +215,23 @@ def filtering_funct(wiki_data, kaggle_metadata, rating_data):
     # remove adult column 
     kaggle_metadata = kaggle_metadata[kaggle_metadata['adult'] == 'False'].drop('adult', axis = 'columns')
 
-    # Converting data types 
-    kaggle_metadata['video'] = kaggle_metadata['video'] == 'True'   
-    kaggle_metadata['budget'] = kaggle_metadata['budget'].astype(int) 
-    kaggle_metadata['id'] = pd.to_numeric(kaggle_metadata['id'], errors = 'raise')
-    kaggle_metadata['popularity'] = pd.to_numeric(kaggle_metadata['popularity'], errors = 'raise')
-    kaggle_metadata['release_date'] = pd.to_datetime(kaggle_metadata['release_date'])
+    # Assumption 4: Any NaN values will cause the astype(int) function to fail. Must Include fillna(0) function prior to starting below analysis
+    try: 
+        # Converting data types 
+        kaggle_metadata['video'] = kaggle_metadata['video'] == 'True'   
+        kaggle_metadata['budget'] = kaggle_metadata['budget'].astype(int) 
+        kaggle_metadata['id'] = pd.to_numeric(kaggle_metadata['id'], errors = 'raise')
+        kaggle_metadata['popularity'] = pd.to_numeric(kaggle_metadata['popularity'], errors = 'raise')
+        kaggle_metadata['release_date'] = pd.to_datetime(kaggle_metadata['release_date'])
+    except: 
+        kaggle_metadata.fillna(0)
+         # Converting data types 
+        kaggle_metadata['video'] = kaggle_metadata['video'] == 'True'   
+        kaggle_metadata['budget'] = kaggle_metadata['budget'].astype(int) 
+        kaggle_metadata['id'] = pd.to_numeric(kaggle_metadata['id'], errors = 'raise')
+        kaggle_metadata['popularity'] = pd.to_numeric(kaggle_metadata['popularity'], errors = 'raise')
+        kaggle_metadata['release_date'] = pd.to_datetime(kaggle_metadata['release_date'])       
+        
 
     # Merge the kaggle_metadata and wiki_df tables 
     movies_df = pd.merge(wiki_df, kaggle_metadata, on = 'imdb_id', suffixes =['_wiki', '_kaggle'])

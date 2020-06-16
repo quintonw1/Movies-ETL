@@ -122,13 +122,13 @@ def filtering_funct(wiki_data, kaggle_metadata, rating_data):
             return value  
         # Adding revised statements for assumption 3
         if re.match(r'B\$\s?\d*\s?.*\s?\d*', s, flags= re.IGNORECASE):
-            s = re.sub(r'\$|\s|[a-zA-Z]', '', s)
+            s = re.sub(r'[Bb]\$|\s|[a-zA-Z]', '', s)
 
             value = float(s) * 10**9
 
             return value
         if re.match(r'M\$\s?\d*\s?.*\s?\d*', s, flags= re.IGNORECASE):
-            s = re.sub(r'\$|\s|[a-zA-Z]', '', s)
+            s = re.sub(r'[Mm]\$|\s|[a-zA-Z]', '', s)
 
             value = float(s) * 10**6  
 
